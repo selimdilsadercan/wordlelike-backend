@@ -12,7 +12,7 @@ describe("contexto service", () => {
     {
       rank: 2,
       word: "tekne",
-      similarity: 0.81327,
+      similarity: 0.8132,
     },
   ];
 
