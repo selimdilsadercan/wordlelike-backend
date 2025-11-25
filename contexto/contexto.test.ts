@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { saveContextoWord, getContextoWordByDay } from "./contexto";
+import {
+  saveContextoWord,
+  getContextoWordByDay,
+  updateByDay,
+  deleteByDay,
+} from "./contexto";
 
 describe("contexto service", () => {
   const testDate = "23.11.2025";
@@ -90,5 +95,76 @@ describe("contexto service", () => {
     // Retrieve and verify update
     const result = await getContextoWordByDay({ date: "24.11.2025" });
     expect(result.words[0].word).toBe("test2");
+  });
+
+  it("should update contexto words using updateByDay", async () => {
+    const initialWords = [
+      {
+        rank: 1,
+        word: "initial",
+        similarity: 1.0,
+      },
+    ];
+
+    const updatedWords = [
+      {
+        rank: 1,
+        word: "updated",
+        similarity: 0.95,
+      },
+    ];
+
+    // First save the words
+    await saveContextoWord({
+      date: "25.11.2025",
+      words: initialWords,
+    });
+
+    // Update using updateByDay
+    const updateResult = await updateByDay({
+      date: "25.11.2025",
+      words: updatedWords,
+    });
+
+    expect(updateResult.success).toBe(true);
+
+    // Verify the update
+    const result = await getContextoWordByDay({ date: "25.11.2025" });
+    expect(result.words[0].word).toBe("updated");
+    expect(result.words[0].similarity).toBe(0.95);
+  });
+
+  it("should throw error when updating non-existent date", async () => {
+    await expect(
+      updateByDay({
+        date: "99.99.9999",
+        words: [],
+      })
+    ).rejects.toThrow();
+  });
+
+  it("should delete contexto words using deleteByDay", async () => {
+    // First save some words
+    await saveContextoWord({
+      date: "26.11.2025",
+      words: testWords,
+    });
+
+    // Verify they exist
+    const beforeDelete = await getContextoWordByDay({ date: "26.11.2025" });
+    expect(beforeDelete.words).toHaveLength(2);
+
+    // Delete them
+    const deleteResult = await deleteByDay({ date: "26.11.2025" });
+    expect(deleteResult.success).toBe(true);
+
+    // Verify they are deleted
+    await expect(
+      getContextoWordByDay({ date: "26.11.2025" })
+    ).rejects.toThrow();
+  });
+
+  it("should throw error when deleting non-existent date", async () => {
+    await expect(deleteByDay({ date: "99.99.9999" })).rejects.toThrow();
   });
 });

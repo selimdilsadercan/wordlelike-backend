@@ -75,6 +75,67 @@ export const getContextoWordByDay = api(
   }
 );
 
+// updateByDay updates contexto words for a specific day.
+export const updateByDay = api(
+  { expose: true, auth: false, method: "PUT", path: "/contexto/:date" },
+  async ({
+    date,
+    words,
+  }: SaveContextoWordParams): Promise<{ success: boolean }> => {
+    const parsedDate = parseDate(date);
+
+    // Check if the record exists
+    const existingRow = await db.queryRow`
+      SELECT date
+      FROM contexto_words
+      WHERE date = ${parsedDate}
+    `;
+
+    if (!existingRow) {
+      throw APIError.notFound(`contexto words not found for date: ${date}`);
+    }
+
+    // Convert words array to JSON string
+    const wordsJSON = JSON.stringify(words);
+
+    // Update the contexto words for this date
+    await db.exec`
+      UPDATE contexto_words
+      SET words = ${wordsJSON}::jsonb, created_at = CURRENT_TIMESTAMP
+      WHERE date = ${parsedDate}
+    `;
+
+    return { success: true };
+  }
+);
+
+// deleteByDay deletes contexto words for a specific day.
+export const deleteByDay = api(
+  { expose: true, auth: false, method: "DELETE", path: "/contexto/:date" },
+  async ({ date }: { date: string }): Promise<{ success: boolean }> => {
+    const parsedDate = parseDate(date);
+
+    // Check if the record exists
+    const existingRow = await db.queryRow`
+      SELECT date
+      FROM contexto_words
+      WHERE date = ${parsedDate}
+    `;
+
+    if (!existingRow) {
+      throw APIError.notFound(`contexto words not found for date: ${date}`);
+    }
+
+    // Delete the contexto words for this date
+    await db.exec`
+      DELETE FROM contexto_words
+      WHERE date = ${parsedDate}
+    `;
+
+    return { success: true };
+  }
+);
+
 // parseDate converts date string to Date object or ISO string format
 function parseDate(dateStr: string): string {
   // Try DD.MM.YYYY format first (like "23.11.2025")
